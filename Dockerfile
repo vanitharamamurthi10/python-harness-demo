@@ -1,15 +1,21 @@
-FROM python:3.12-slim
+# Build stage
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
 COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
-COPY app.py .
+# Runtime stage
+FROM gcr.io/distroless/python3
 
-ENV APP_VERSION=1.0.0
+WORKDIR /app
 
-EXPOSE 8080
+COPY --from=builder /install /usr/local
+COPY --from=builder /app /app
 
-CMD ["python", "app.py"]
+EXPOSE 5000
+
+CMD ["app.py"]
